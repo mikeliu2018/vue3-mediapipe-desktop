@@ -1,0 +1,89 @@
+<template>
+  <div class="holistic">
+    <h1>Holistic demo</h1>
+    <div class="container">
+      <video class="input_video" ref="source" v-show="false"></video>
+      <canvas
+        class="output_canvas"
+        :class="{ loading_canvas: loadingCanvas }"
+        :width="canvasWidth"
+        :height="canvasHeight"
+        ref="canvas"
+      ></canvas>
+      <div class="landmark-grid-container" ref="landmarkContainer"></div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, onActivated, computed } from "vue";
+import { HolisticService, LogService } from "@/services";
+// import { LandmarkGrid } from "@mediapipe/control_utils_3d";
+
+const source = ref<InstanceType<typeof HTMLVideoElement> | null>(null);
+const canvas = ref<InstanceType<typeof HTMLCanvasElement> | null>(null);
+const landmarkContainer = ref<InstanceType<typeof HTMLDivElement> | null>(null);
+const logService = new LogService();
+const loadingCanvas = ref(true);
+
+const canvasWidth = computed(() => {
+  return window.innerWidth * 0.7;
+});
+
+const canvasHeight = computed(() => {
+  return canvasWidth.value * (9 / 16);
+});
+
+onMounted(() => {
+  logService.debug_log("onMounted");
+  logService.debug_log("canvasWidth", canvasWidth);
+  logService.debug_log("canvasHeight", canvasHeight);
+
+  if (canvas.value && source.value && landmarkContainer.value) {
+    new HolisticService(
+      canvas.value,
+      source.value,
+      canvasWidth.value,
+      canvasHeight.value,
+      landmarkContainer.value,
+      loadingCanvas
+    ).setOptions({
+      modelComplexity: 1,
+      smoothLandmarks: true,
+      enableSegmentation: true,
+      smoothSegmentation: true,
+      refineFaceLandmarks: true,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5,
+    });
+  }
+});
+
+onActivated(() => {
+  logService.debug_log("onActivated");
+});
+</script>
+
+<style scoped>
+.holistic {
+  align-items: center;
+  text-align: center;
+  margin: 1.5rem 1.5rem;
+}
+.holistic h1 {
+  margin: 1.5rem 1.5rem;
+}
+.loading_canvas {
+  background: url("https://media.giphy.com/media/8agqybiK5LW8qrG3vJ/giphy.gif")
+    center no-repeat;
+}
+@media (min-width: 1024px) {
+  .holistic {
+    margin: 3rem 3rem;
+  }
+  .input_video,
+  .output_canvas {
+    margin: 1.5rem 1.5rem;
+  }
+}
+</style>

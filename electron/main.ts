@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, protocol } from "electron";
 import path from "path";
 
 // if (process.env["VITE_DEV_SERVER_HOST"] === undefined)
@@ -18,32 +18,50 @@ console.log(
 );
 
 const createWindow = () => {
-  const win = new BrowserWindow({
+  const mainWindow = new BrowserWindow({
     webPreferences: {
       // contextIsolation: true,
       // nodeIntegration: true,
       preload: path.join(__dirname, "../dist-electron/preload.js"),
-      // devTools: process.env.NODE_ENV !== "production",
-      devTools: true,
+      devTools: process.env["NODE_ENV"] === "development",
     },
   });
-  if (app.isPackaged) {
-    win.loadFile(path.join(__dirname, "../dist/index.html"));
-  } else {
-    //  Use ['ENV_NAME'] avoid vite:define plugin
-    const url =
-      process.env.VITE_DEV_SERVER_URL !== undefined
-        ? process.env.VITE_DEV_SERVER_URL
-        : `http://${process.env.VITE_DEV_SERVER_HOST}:${process.env.VITE_DEV_SERVER_PORT}`;
-    win.loadURL(url);
-    console.log("url", url);
 
-    // if (process.env["NODE_ENV"] === "development")
-    win.webContents.openDevTools();
-  }
+  protocol.registerHttpProtocol("electron-login", (req, cb) => {
+    const url = new URL(req.url);
+    const searchParams = new URLSearchParams(url.search);
+    reload()
+      .then(() => {
+        if (searchParams.has("id_token")) {
+          mainWindow.webContents.send(
+            "handle-login-with-google",
+            Object.fromEntries(searchParams)
+          );
+        }
+      })
+      .catch((err) => console.error(err));
+  });
+
+  const reload = () => {
+    if (app.isPackaged) {
+      return mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
+    } else {
+      //  Use ['ENV_NAME'] avoid vite:define plugin
+      const url =
+        process.env.VITE_DEV_SERVER_URL !== undefined
+          ? process.env.VITE_DEV_SERVER_URL
+          : `http://${process.env.VITE_DEV_SERVER_HOST}:${process.env.VITE_DEV_SERVER_PORT}`;
+
+      return mainWindow.loadURL(url);
+    }
+  };
+
+  reload().then(() => {
+    console.log("mainWindow reload complete");
+  });
 };
 app.whenReady().then(() => {
-  ipcMain.handle("get-version", (event, platform) => {
+  ipcMain.handle("get-platform-version", (event, platform) => {
     // const webContents = event.sender;
     // const win = BrowserWindow.fromWebContents(webContents);
     // console.log("win", win);

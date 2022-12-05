@@ -1,13 +1,10 @@
-<script setup lang="ts">
-import GoogleOneTap from "../components/GoogleOneTap.vue";
-</script>
+<script setup lang="ts"></script>
 
 <template>
   <div class="about">
     <h1>This is a base on Vue3 + Vite + Typescript project</h1>
     <p>The project will receive user's biometric data from camera</p>
     <p>And use media-pipe to draw image on canvas</p>
-    <GoogleOneTap></GoogleOneTap>
   </div>
 </template>
 

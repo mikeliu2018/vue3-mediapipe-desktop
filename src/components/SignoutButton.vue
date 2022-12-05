@@ -3,7 +3,6 @@ import { computed } from "vue";
 import { useAuthStore } from "@/stores";
 import { LogService } from "@/services";
 import { useToast, POSITION } from "vue-toastification";
-import { googleLogout } from "vue3-google-login";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
@@ -16,8 +15,6 @@ const signout = () => {
   useAuthStore().$patch((state) => {
     state.credential = "";
   });
-
-  googleLogout();
 
   if (router.currentRoute.value.path !== "/") {
     router.push({ name: "root" });

@@ -1,7 +1,10 @@
 import { useAuthStore } from "@/stores";
 
 export class UserService {
-  private static verifyIdTokenUrl = "/api/login-with-google";
+  private static verifyIdTokenUrl =
+    import.meta.env.VITE_NODE_ENV === "production"
+      ? `${import.meta.env.VITE_DEV_API_SERVER_URL}/login-with-google`
+      : "/api/login-with-google";
 
   public static isLoggedIn() {
     const store = useAuthStore();

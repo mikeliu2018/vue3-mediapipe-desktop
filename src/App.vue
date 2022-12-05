@@ -3,14 +3,17 @@ import { onMounted } from "vue";
 import { RouterLink, RouterView } from "vue-router";
 // import HelloWorld from "./components/HelloWorld.vue";
 import SignoutButton from "./components/SignoutButton.vue";
-import { LogService } from "@/services";
+import { LogService, UserService } from "@/services";
+import { useAuthStore } from "@/stores";
+import { useToast, POSITION } from "vue-toastification";
+import type UserToken from "../src/types";
 
 onMounted(() => {
   const innerWidth = window.innerWidth;
   const innerHeight = window.innerHeight;
   LogService.debug_log(`innerWidth`, innerWidth);
   LogService.debug_log(`innerHeight`, innerHeight);
-  // showVersions();
+  showVersions();
 });
 
 const showVersions = async () => {
@@ -20,10 +23,40 @@ const showVersions = async () => {
     { name: "electron", version: "" },
   ];
   platforms.map(async (platform) => {
-    return (platform.version = await window.platform.getVersion(platform.name));
+    return (platform.version = await window.electronAPI.getPlatformVersion(
+      platform.name
+    ));
   });
-  console.log("platforms:", platforms);
+  LogService.debug_log("platforms:", platforms);
 };
+
+window.electronAPI.handleLoginWithGoogle(
+  async (event, userToken: UserToken) => {
+    const toast = useToast();
+    toast.info("Now, you are try log in.", {
+      position: POSITION.BOTTOM_RIGHT,
+    });
+    const clientId = import.meta.env.VITE_APP_GOOGLE_SIGNIN_CLIENT_ID;
+    const idToken = userToken.id_token;
+    try {
+      const res = await UserService.loginWithGoogle(clientId, idToken);
+      LogService.debug_log("loginWithGoogle", res);
+      if (res.result === "OK") {
+        // store user credentials
+        const store = useAuthStore();
+        store.login(idToken);
+        toast.info("You are logged in.", {
+          position: POSITION.BOTTOM_RIGHT,
+        });
+      }
+    } catch (error: any) {
+      LogService.error_log(error);
+      toast.error(`Error: ${error.message}`, {
+        position: POSITION.BOTTOM_RIGHT,
+      });
+    }
+  }
+);
 </script>
 
 <template>
